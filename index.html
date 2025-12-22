@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Roblox Trade Forum</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: linear-gradient(135deg, #21006E 0%, #140044 51%, #070016 100%);
+  color: white;
+}
+
+#forum {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 30px;
+}
+
+.card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 12px;
+}
+
+input {
+  background: rgba(0,0,0,0.4);
+  color: white;
+}
+
+button {
+  background: linear-gradient(135deg, #6f4cff, #9b7bff);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.post {
+  background: rgba(255,255,255,0.05);
+  padding: 14px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.username {
+  color: #c7b8ff;
+  font-weight: 600;
+}
+
+.info {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-top: 18px;
+}
+</style>
+</head>
+
+<body>
+<div id="forum">
+  <div class="card">
+    <h2>Trade Requests</h2>
+    <input id="user" placeholder="Roblox Username">
+    <input id="game" placeholder="Roblox Game">
+    <input id="give" placeholder="Item You Are Giving">
+    <input id="want" placeholder="Item You Want">
+    <button onclick="post()">Post Trade</button>
+    <p id="timer"></p>
+  </div>
+
+  <div id="posts"></div>
+
+  <p class="info">
+    <b>How to complete a trade:</b><br>
+    Copy the trader’s Roblox username shown above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
+  </p>
+</div>
+
+<script>
+const API = "https://jsonblob.com/api/jsonBlob/1187755894569029632"; // temporary public store
+const EXPIRY = 3 * 60 * 60 * 1000;
+
+async function load() {
+  const res = await fetch(API);
+  let posts = await res.json();
+  const now = Date.now();
+
+  posts = posts.filter(p => now - p.time < EXPIRY);
+  await fetch(API, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(posts) });
+
+  const box = document.getElementById("posts");
+  box.innerHTML = "";
+  posts.reverse().forEach(p => {
+    box.innerHTML += `
+      <div class="post">
+        <div class="username">${p.user}</div>
+        <div>Game: ${p.game}</div>
+        <div><b>Giving:</b> ${p.give}</div>
+        <div><b>Want:</b> ${p.want}</div>
+      </div>`;
+  });
+
+  updateTimer(posts);
+}
+
+function updateTimer(posts) {
+  if (!posts.length) return;
+  const oldest = Math.min(...posts.map(p => p.time));
+  const left = EXPIRY - (Date.now() - oldest);
+  const h = Math.floor(left/3600000);
+  const m = Math.floor((left%3600000)/60000);
+  const s = Math.floor((left%60000)/1000);
+  document.getElementById("timer").textContent =
+    `Offers reset in ${h}h ${m}m ${s}s`;
+}
+
+async function post() {
+  const user = user.value.trim();
+  const game = game.value.trim();
+  const give = give.value.trim();
+  const want = want.value.trim();
+  if (!user || !game || !give || !want) return alert("All fields required");
+
+  const res = await fetch(API);
+  const posts = await res.json();
+  posts.push({ user, game, give, want, time: Date.now() });
+
+  await fetch(API, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(posts) });
+  load();
+}
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>
