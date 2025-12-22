@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Trade Forum</title>
+<title>Roblox Trade Forum</title>
 <style>
 body { margin:0; font-family:Arial,sans-serif; background:linear-gradient(135deg,#21006E 0%,#140044 51%,#070016 100%); color:white; }
 #forum { max-width:800px; margin:40px auto; padding:30px; }
@@ -20,6 +20,7 @@ button { background:linear-gradient(135deg,#6f4cff,#9b7bff); color:white; font-w
 </style>
 </head>
 <body>
+
 <div id="forum">
   <div class="card">
     <h2>Trade Requests</h2>
@@ -40,9 +41,9 @@ button { background:linear-gradient(135deg,#6f4cff,#9b7bff); color:white; font-w
 </div>
 
 <script>
-const COOLDOWN = 60*60*1000;
-const EXPIRY = 3*60*60*1000;
-const API = "https://api.npoint.io/your_unique_endpoint_here"; // pre-made global backend
+const COOLDOWN = 60*60*1000; // 1 hour
+const EXPIRY = 3*60*60*1000;  // 3 hours
+const API = "https://api.npoint.io/82a12b64f0f0b6d585cf"; // pre-made global backend
 const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
 
 function containsBanned(text){ return bannedWords.some(w=>text.toLowerCase().includes(w)); }
@@ -51,10 +52,12 @@ async function loadPosts(){
   let posts = await (await fetch(API)).json();
   const now = Date.now();
   posts = posts.filter(p=>now - p.time < EXPIRY);
-  document.getElementById("posts").innerHTML = "";
+  
+  const container = document.getElementById("posts");
+  container.innerHTML = "";
   posts.reverse().forEach(p=>{
-    document.getElementById("posts").innerHTML +=
-      `<div class="post">
+    container.innerHTML += `
+      <div class="post">
         <div class="username">${p.user}</div>
         <div class="game">Game: ${p.game}</div>
         <div class="trade-line"><b>Giving:</b> ${p.give}</div>
@@ -62,6 +65,7 @@ async function loadPosts(){
         <div class="time">${new Date(p.time).toLocaleString()}</div>
       </div>`;
   });
+
   updateTimer(posts);
 }
 
@@ -69,18 +73,18 @@ function updateTimer(posts){
   const timer = document.getElementById("timer");
   if(!posts.length){ timer.textContent="Offers will delete in 3h 0m 0s"; return; }
   const oldest = Math.min(...posts.map(p=>p.time));
-  const remaining = EXPIRY-(Date.now()-oldest);
-  const h=Math.floor(remaining/3600000);
-  const m=Math.floor((remaining%3600000)/60000);
-  const s=Math.floor((remaining%60000)/1000);
+  const remaining = EXPIRY - (Date.now() - oldest);
+  const h = Math.floor(remaining/3600000);
+  const m = Math.floor((remaining%3600000)/60000);
+  const s = Math.floor((remaining%60000)/1000);
   timer.textContent=`Offers will delete in ${h}h ${m}m ${s}s`;
 }
 
 async function post(){
-  const user=document.getElementById("username").value.trim();
-  const game=document.getElementById("game").value.trim();
-  const give=document.getElementById("give").value.trim();
-  const want=document.getElementById("want").value.trim();
+  const user = document.getElementById("username").value.trim();
+  const game = document.getElementById("game").value.trim();
+  const give = document.getElementById("give").value.trim();
+  const want = document.getElementById("want").value.trim();
   const lastPost = localStorage.getItem("lastPostTime");
   const now = Date.now();
 
@@ -90,8 +94,10 @@ async function post(){
 
   let posts = await (await fetch(API)).json();
   posts.push({user,game,give,want,time:now});
+
   await fetch(API, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(posts)});
   localStorage.setItem("lastPostTime", now);
+
   document.getElementById("give").value="";
   document.getElementById("want").value="";
   loadPosts();
@@ -100,5 +106,6 @@ async function post(){
 setInterval(loadPosts,5000);
 loadPosts();
 </script>
+
 </body>
 </html>
