@@ -36,12 +36,15 @@ h2 {
   color: #9b7bff;
   margin-bottom: 18px;
 }
-input, button {
+/* --- INPUTS & BUTTONS --- */
+.card input, .card button {
   width: 100%;
+  max-width: 400px; /* limit width */
+  margin: 0 auto 14px auto; /* center */
+  display: block;
   padding: 14px 18px;
   border-radius: 12px;
   border: none;
-  margin-bottom: 14px;
   font-size: 15px;
   outline: none;
 }
@@ -65,6 +68,7 @@ button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
+/* --- POSTS --- */
 .post {
   display: flex;
   gap: 16px;
@@ -127,8 +131,8 @@ button:hover {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-const COOLDOWN = 60*60*1000; // 1 hour
-const EXPIRY = 3*60*60*1000; // 3 hours
+const COOLDOWN = 60*60*1000;
+const EXPIRY = 3*60*60*1000;
 const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
 
 const firebaseConfig = {
@@ -145,38 +149,49 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const postsRef = ref(db, "posts");
 
-function getAvatarUrl(username){
-  return `https://www.roblox.com/headshot-thumbnail/image?userId=${username}&width=150&height=150&format=png`;
-}
-function containsBanned(text){
-  return bannedWords.some(w=>text.toLowerCase().includes(w));
+// Roblox API helper to get user ID then avatar
+async function getAvatarUrl(username){
+  try {
+    const res = await fetch(`https://api.roblox.com/users/get-by-username?username=${encodeURIComponent(username)}`);
+    const data = await res.json();
+    if(data.Id){
+      return `https://www.roblox.com/headshot-thumbnail/image?userId=${data.Id}&width=150&height=150&format=png`;
+    } else {
+      return "https://www.roblox.com/favicon.ico";
+    }
+  } catch(err){
+    return "https://www.roblox.com/favicon.ico";
+  }
 }
 
+function containsBanned(text){ return bannedWords.some(w=>text.toLowerCase().includes(w)); }
+
 function loadPosts(){
-  onValue(postsRef, (snapshot)=>{
+  onValue(postsRef, async (snapshot)=>{
     const data = snapshot.val() || {};
     const now = Date.now();
     const container = document.getElementById("posts");
     container.innerHTML = "";
 
-    // Remove expired posts
-    Object.entries(data).forEach(([key, p])=>{
+    for(const [key,p] of Object.entries(data)){
       if(now - p.time > EXPIRY){
         remove(ref(db, "posts/"+key));
         delete data[key];
       }
-    });
+    }
 
-    Object.values(data).sort((a,b)=>b.time - a.time).forEach(p=>{
+    for(const p of Object.values(data).sort((a,b)=>b.time-a.time)){
       const postDiv = document.createElement("div");
-      postDiv.className = "post";
+      postDiv.className="post";
+
       const avatar = document.createElement("img");
       avatar.className="avatar";
-      avatar.src = getAvatarUrl(p.user);
-      avatar.onerror=()=>avatar.src="https://www.roblox.com/favicon.ico";
+      avatar.src = "https://www.roblox.com/favicon.ico";
+      getAvatarUrl(p.user).then(url => avatar.src = url);
+
       const content = document.createElement("div");
       content.className="post-content";
-      content.innerHTML = `
+      content.innerHTML=`
         <div class="username">${p.user}</div>
         <div class="game">Game: ${p.game}</div>
         <div class="trade-line"><b>Giving:</b> ${p.give}</div>
@@ -186,7 +201,7 @@ function loadPosts(){
       postDiv.appendChild(avatar);
       postDiv.appendChild(content);
       container.appendChild(postDiv);
-    });
+    }
 
     updateTimer(data);
   });
@@ -225,7 +240,6 @@ document.getElementById("postButton").addEventListener("click", ()=>{
   document.getElementById("want").value="";
 });
 
-// Initial load
 loadPosts();
 </script>
 
