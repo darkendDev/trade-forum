@@ -2,145 +2,114 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Roblox Trade Forum</title>
-
+<title>Trade Forum</title>
 <style>
-body {
-  margin: 0;
-  font-family: Inter, Arial, sans-serif;
-  background: linear-gradient(135deg, #21006E 0%, #140044 51%, #070016 100%);
-  color: white;
-}
-
-#forum {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 30px;
-}
-
-.card {
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(10px);
-  padding: 20px;
-  border-radius: 16px;
-  margin-bottom: 20px;
-}
-
-input, button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  margin-bottom: 12px;
-}
-
-input {
-  background: rgba(0,0,0,0.4);
-  color: white;
-}
-
-button {
-  background: linear-gradient(135deg, #6f4cff, #9b7bff);
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.post {
-  background: rgba(255,255,255,0.05);
-  padding: 14px;
-  border-radius: 14px;
-  margin-bottom: 12px;
-}
-
-.username {
-  color: #c7b8ff;
-  font-weight: 600;
-}
-
-.info {
-  font-size: 13px;
-  opacity: 0.75;
-  margin-top: 18px;
-}
+body { margin:0; font-family:Arial, sans-serif; background:linear-gradient(135deg, #21006E 0%, #140044 51%, #070016 100%); color:white; }
+#forum { max-width:800px; margin:40px auto; padding:30px; }
+.card { background:rgba(255,255,255,0.06); backdrop-filter:blur(10px); padding:20px; border-radius:16px; margin-bottom:20px; }
+input, button { width:100%; padding:12px; border-radius:10px; border:none; margin-bottom:12px; }
+input { background:rgba(0,0,0,0.4); color:white; }
+button { background:linear-gradient(135deg,#6f4cff,#9b7bff); color:white; font-weight:600; cursor:pointer; }
+.post { background:rgba(255,255,255,0.05); padding:14px; border-radius:14px; margin-bottom:12px; }
+.username { color:#c7b8ff; font-weight:600; }
+.trade-line { font-size:14px; margin-top:4px; }
+.game { font-size:13px; opacity:0.85; margin-top:2px; }
+.time { font-size:12px; opacity:0.6; margin-top:4px; }
+.timer-text { font-size:13px; opacity:0.85; margin-top:10px; }
+.info-text { font-size:13px; opacity:0.75; margin-top:18px; line-height:1.4; }
 </style>
 </head>
-
 <body>
+
 <div id="forum">
   <div class="card">
     <h2>Trade Requests</h2>
-    <input id="user" placeholder="Roblox Username">
+    <input id="username" placeholder="Roblox Username">
     <input id="game" placeholder="Roblox Game">
     <input id="give" placeholder="Item You Are Giving">
     <input id="want" placeholder="Item You Want">
     <button onclick="post()">Post Trade</button>
-    <p id="timer"></p>
+    <p id="timer" class="timer-text"></p>
   </div>
 
   <div id="posts"></div>
 
-  <p class="info">
+  <p class="info-text">
     <b>How to complete a trade:</b><br>
     Copy the trader’s Roblox username shown above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
   </p>
 </div>
 
 <script>
-const API = "https://jsonblob.com/api/jsonBlob/1187755894569029632"; // temporary public store
-const EXPIRY = 3 * 60 * 60 * 1000;
+const COOLDOWN = 60*60*1000; // 1 hour
+const EXPIRY = 3*60*60*1000; // 3 hours
+const API = "https://jsonblob.com/api/jsonBlob/YOUR_JSONBLOB_ID"; // Replace with your own JSONBlob ID
+const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
 
-async function load() {
+function containsBanned(text){ const lower=text.toLowerCase(); return bannedWords.some(word=>lower.includes(word)); }
+
+async function loadPosts(){
   const res = await fetch(API);
   let posts = await res.json();
   const now = Date.now();
-
-  posts = posts.filter(p => now - p.time < EXPIRY);
-  await fetch(API, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(posts) });
-
-  const box = document.getElementById("posts");
-  box.innerHTML = "";
-  posts.reverse().forEach(p => {
-    box.innerHTML += `
+  posts = posts.filter(p=>now - p.time < EXPIRY);
+  await fetch(API, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(posts)});
+  
+  const container=document.getElementById("posts");
+  container.innerHTML="";
+  posts.reverse().forEach(p=>{
+    container.innerHTML+=`
       <div class="post">
         <div class="username">${p.user}</div>
-        <div>Game: ${p.game}</div>
-        <div><b>Giving:</b> ${p.give}</div>
-        <div><b>Want:</b> ${p.want}</div>
+        <div class="game">Game: ${p.game}</div>
+        <div class="trade-line"><b>Giving:</b> ${p.give}</div>
+        <div class="trade-line"><b>Want:</b> ${p.want}</div>
+        <div class="time">${new Date(p.time).toLocaleString()}</div>
       </div>`;
   });
 
   updateTimer(posts);
 }
 
-function updateTimer(posts) {
-  if (!posts.length) return;
-  const oldest = Math.min(...posts.map(p => p.time));
-  const left = EXPIRY - (Date.now() - oldest);
-  const h = Math.floor(left/3600000);
-  const m = Math.floor((left%3600000)/60000);
-  const s = Math.floor((left%60000)/1000);
-  document.getElementById("timer").textContent =
-    `Offers reset in ${h}h ${m}m ${s}s`;
+function updateTimer(posts){
+  const timer=document.getElementById("timer");
+  if(!posts.length){ timer.textContent="Offers will delete in 3h 0m 0s"; return; }
+  const oldest=Math.min(...posts.map(p=>p.time));
+  const remaining=EXPIRY-(Date.now()-oldest);
+  if(remaining<=0){ loadPosts(); return; }
+  const h=Math.floor(remaining/3600000);
+  const m=Math.floor((remaining%3600000)/60000);
+  const s=Math.floor((remaining%60000)/1000);
+  timer.textContent=`Offers will delete in ${h}h ${m}m ${s}s`;
 }
 
-async function post() {
-  const user = user.value.trim();
-  const game = game.value.trim();
-  const give = give.value.trim();
-  const want = want.value.trim();
-  if (!user || !game || !give || !want) return alert("All fields required");
+async function post(){
+  const user=document.getElementById("username").value.trim();
+  const game=document.getElementById("game").value.trim();
+  const give=document.getElementById("give").value.trim();
+  const want=document.getElementById("want").value.trim();
+  const lastPost = localStorage.getItem("lastPostTime");
+  const now = Date.now();
+
+  if(!user||!game||!give||!want){ return alert("All fields required"); }
+  if([user,game,give,want].some(containsBanned)){ return alert("Message contains inappropriate language"); }
+  if(lastPost && now - lastPost < COOLDOWN){ return alert("You must wait 1 hour before posting again."); }
 
   const res = await fetch(API);
   const posts = await res.json();
-  posts.push({ user, game, give, want, time: Date.now() });
+  posts.push({user,game,give,want,time:now});
 
-  await fetch(API, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(posts) });
-  load();
+  await fetch(API, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(posts)});
+  localStorage.setItem("lastPostTime", now);
+
+  document.getElementById("give").value="";
+  document.getElementById("want").value="";
+  loadPosts();
 }
 
-load();
-setInterval(load, 5000);
+setInterval(loadPosts,5000);
+loadPosts();
 </script>
+
 </body>
 </html>
