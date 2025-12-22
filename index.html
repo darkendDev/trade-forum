@@ -1,192 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Valueforged Trade Forum</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-/* --- GENERAL STYLES --- */
-body {
-  margin: 0;
-  font-family: 'Roboto', sans-serif;
-  background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
-  color: #fff;
-}
+<!-- Firebase 9 scripts -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-#forum-container {
-  max-width: 1000px;
-  margin: 40px auto;
-  padding: 20px;
-}
-
-.card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border-radius: 18px;
-  padding: 30px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  margin-bottom: 25px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-}
-
-h2 {
-  font-weight: 700;
-  font-size: 26px;
-  color: #9b7bff;
-  margin-bottom: 18px;
-}
-
-/* --- INPUTS & BUTTONS --- */
-input, select, button {
-  width: 100%;
-  padding: 14px 18px;
-  border-radius: 12px;
-  border: none;
-  margin-bottom: 14px;
-  font-size: 15px;
-  outline: none;
-}
-
-input, select {
-  background: rgba(0,0,0,0.45);
-  color: #fff;
-  transition: all 0.2s;
-}
-
-input:focus, select:focus {
-  background: rgba(0,0,0,0.6);
-  box-shadow: 0 0 8px #9b7bff;
-}
-
-button {
-  background: linear-gradient(135deg, #6f4cff, #9b7bff);
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-}
-
-/* --- POSTS --- */
-.post {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  background: rgba(255,255,255,0.05);
-  border-left: 4px solid #6f4cff;
-  padding: 18px;
-  border-radius: 14px;
-  margin-bottom: 16px;
-  transition: background 0.3s;
-}
-
-.post:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-.avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  flex-shrink: 0;
-}
-
-.post-content {
-  flex: 1;
-}
-
-.username {
-  font-weight: 700;
-  font-size: 16px;
-  color: #c7b8ff;
-}
-
-.game {
-  font-size: 13px;
-  opacity: 0.85;
-  margin-top: 2px;
-}
-
-.trade-line {
-  font-size: 14px;
-  margin-top: 4px;
-}
-
-.time {
-  font-size: 12px;
-  opacity: 0.6;
-  margin-top: 4px;
-}
-
-#timer {
-  font-size: 13px;
-  opacity: 0.85;
-  margin-top: 12px;
-}
-
-/* --- INFO TEXT --- */
-.info-text {
-  font-size: 13px;
-  opacity: 0.75;
-  margin-top: 22px;
-  line-height: 1.5;
-}
-
-/* --- RESPONSIVE --- */
-@media (max-width: 600px) {
-  .post {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .post-content {
-    width: 100%;
-  }
-}
-</style>
-</head>
-<body>
-
-<div id="forum-container">
-  <div class="card">
-    <h2>Trade Requests</h2>
-    <input id="username" placeholder="Roblox Username">
-    <input id="game" placeholder="Roblox Game">
-    <input id="give" placeholder="Item You Are Giving">
-    <input id="want" placeholder="Item You Want">
-    <button onclick="post()">Post Trade</button>
-    <p id="timer"></p>
-  </div>
-
-  <div id="posts"></div>
-
-  <p class="info-text">
-    <b>How to complete a trade:</b><br>
-    Copy the trader’s Roblox username above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
-  </p>
-</div>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
-
-<script>
-const COOLDOWN = 60*60*1000;
-const EXPIRY = 3*60*60*1000;
-const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
-
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDs_5zv6fgFe5P02TEIW2sJFgbczBPVe3A",
   authDomain: "tradingforum-ffbb4.firebaseapp.com",
@@ -197,15 +13,16 @@ const firebaseConfig = {
   appId: "1:1092132341604:web:6c2286bcc84acdd4b95c71"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-const postsRef = database.ref('posts');
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+const postsRef = ref(database, "posts");
 
-firebase.database().ref('.info/connected').on('value', snap => {
-  if(snap.val()===true) console.log("Firebase connected!");
-  else console.log("Firebase not connected");
-});
+// ----- Config -----
+const COOLDOWN = 60*60*1000; // 1 hour
+const EXPIRY = 3*60*60*1000; // 3 hours
+const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
 
+// Roblox avatar helper
 function getAvatarUrl(username){
   return `https://www.roblox.com/headshot-thumbnail/image?userId=${username}&width=150&height=150&format=png`;
 }
@@ -213,14 +30,16 @@ function containsBanned(text){
   return bannedWords.some(w => text.toLowerCase().includes(w));
 }
 
+// Load posts
 function loadPosts(){
-  postsRef.once('value').then(snapshot=>{
+  onValue(postsRef, (snapshot) => {
     let postsData = snapshot.val() || {};
     const now = Date.now();
 
-    for(const key in postsData){
+    // Remove expired posts
+    for (const key in postsData){
       if(now - postsData[key].time > EXPIRY){
-        postsRef.child(key).remove();
+        remove(ref(database, "posts/" + key));
         delete postsData[key];
       }
     }
@@ -228,7 +47,7 @@ function loadPosts(){
     const container = document.getElementById("posts");
     container.innerHTML = "";
 
-    Object.values(postsData).sort((a,b)=>b.time-a.time).forEach(p=>{
+    Object.values(postsData).sort((a,b)=>b.time - a.time).forEach(p=>{
       const postDiv = document.createElement("div");
       postDiv.className = "post";
 
@@ -253,27 +72,23 @@ function loadPosts(){
     });
 
     updateTimer(postsData);
-
-    // Scroll to latest post
-    if(container.lastChild){
-      container.lastChild.scrollIntoView({behavior:"smooth"});
-    }
-  }).catch(err=>console.error("Error loading posts:", err));
+  });
 }
 
+// Update timer
 function updateTimer(postsData){
   const timer = document.getElementById("timer");
   const times = Object.values(postsData).map(p=>p.time);
   if(times.length===0){ timer.textContent="Offers will delete in 3h 0m 0s"; return; }
-
   const oldest = Math.min(...times);
-  const remaining = EXPIRY - (Date.now()-oldest);
+  const remaining = EXPIRY - (Date.now() - oldest);
   const h = Math.floor(remaining / 3600000);
   const m = Math.floor((remaining % 3600000)/60000);
   const s = Math.floor((remaining % 60000)/1000);
   timer.textContent = `Offers will delete in ${h}h ${m}m ${s}s`;
 }
 
+// Post trade
 function post(){
   const user = document.getElementById("username").value.trim();
   const game = document.getElementById("game").value.trim();
@@ -286,7 +101,7 @@ function post(){
   if([user,game,give,want].some(containsBanned)){ return alert("Message contains inappropriate language."); }
   if(lastPost && now - lastPost < COOLDOWN){ return alert("You must wait 1 hour before posting again."); }
 
-  postsRef.push({user, game, give, want, time: now})
+  push(postsRef, {user, game, give, want, time: now})
     .then(()=>console.log("Post saved"))
     .catch(err=>alert("Error saving post: "+err.message));
 
@@ -295,9 +110,6 @@ function post(){
   document.getElementById("want").value="";
 }
 
-// Live updates
-postsRef.on('value', loadPosts);
+// Load posts initially
+loadPosts();
 </script>
-
-</body>
-</html>
