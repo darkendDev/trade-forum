@@ -132,118 +132,125 @@ button:hover {
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
 
 <script>
-  // ----- CONFIG -----
-  const COOLDOWN = 60*60*1000; // 1 hour
-  const EXPIRY = 3*60*60*1000; // 3 hours
-  const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
+const COOLDOWN = 60*60*1000; // 1 hour
+const EXPIRY = 3*60*60*1000; // 3 hours
+const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
 
-  // Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyDs_5zv6fgFe5P02TEIW2sJFgbczBPVe3A",
-    authDomain: "tradingforum-ffbb4.firebaseapp.com",
-    databaseURL: "https://tradingforum-ffbb4-default-rtdb.firebaseio.com",
-    projectId: "tradingforum-ffbb4",
-    storageBucket: "tradingforum-ffbb4.appspot.com",
-    messagingSenderId: "1092132341604",
-    appId: "1:1092132341604:web:6c2286bcc84acdd4b95c71"
-  };
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDs_5zv6fgFe5P02TEIW2sJFgbczBPVe3A",
+  authDomain: "tradingforum-ffbb4.firebaseapp.com",
+  databaseURL: "https://tradingforum-ffbb4-default-rtdb.firebaseio.com",
+  projectId: "tradingforum-ffbb4",
+  storageBucket: "tradingforum-ffbb4.appspot.com",
+  messagingSenderId: "1092132341604",
+  appId: "1:1092132341604:web:6c2286bcc84acdd4b95c71"
+};
 
-  // Initialize Firebase
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-  const postsRef = database.ref('posts');
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const postsRef = database.ref('posts');
 
-  // Roblox avatar helper
-  function getAvatarUrl(username) {
-    return `https://www.roblox.com/headshot-thumbnail/image?userId=${username}&width=150&height=150&format=png`;
-  }
+// Check connection
+firebase.database().ref('.info/connected').on('value', snap => {
+  if(snap.val() === true) console.log("Firebase connected!");
+  else console.log("Firebase not connected");
+});
 
-  function containsBanned(text){
-    return bannedWords.some(w => text.toLowerCase().includes(w));
-  }
+function getAvatarUrl(username){
+  return `https://www.roblox.com/headshot-thumbnail/image?userId=${username}&width=150&height=150&format=png`;
+}
+function containsBanned(text){
+  return bannedWords.some(w => text.toLowerCase().includes(w));
+}
 
-  // Load posts from Firebase
-  function loadPosts(){
-    postsRef.once('value', snapshot => {
-      let postsData = snapshot.val() || {};
-      const now = Date.now();
-
-      // Filter expired
-      for(const key in postsData){
-        if(now - postsData[key].time > EXPIRY){
-          postsRef.child(key).remove();
-          delete postsData[key];
-        }
-      }
-
-      const container = document.getElementById("posts");
-      container.innerHTML = "";
-
-      Object.values(postsData).sort((a,b)=>b.time-a.time).forEach(p=>{
-        const postDiv = document.createElement("div");
-        postDiv.className = "post";
-
-        const avatar = document.createElement("img");
-        avatar.className = "avatar";
-        avatar.src = getAvatarUrl(p.user);
-        avatar.onerror = ()=>avatar.src="https://www.roblox.com/favicon.ico";
-
-        const content = document.createElement("div");
-        content.className = "post-content";
-        content.innerHTML = `
-          <div class="username">${p.user}</div>
-          <div class="game">Game: ${p.game}</div>
-          <div class="trade-line"><b>Giving:</b> ${p.give}</div>
-          <div class="trade-line"><b>Want:</b> ${p.want}</div>
-          <div class="time">${new Date(p.time).toLocaleString()}</div>
-        `;
-
-        postDiv.appendChild(avatar);
-        postDiv.appendChild(content);
-        container.appendChild(postDiv);
-      });
-
-      updateTimer(postsData);
-    });
-  }
-
-  function updateTimer(postsData){
-    const timer = document.getElementById("timer");
-    const times = Object.values(postsData).map(p=>p.time);
-    if(times.length === 0){ timer.textContent = `Offers will delete in 3h 0m 0s`; return; }
-
-    const oldest = Math.min(...times);
-    const remaining = EXPIRY - (Date.now()-oldest);
-    const h = Math.floor(remaining / 3600000);
-    const m = Math.floor((remaining % 3600000)/60000);
-    const s = Math.floor((remaining % 60000)/1000);
-    timer.textContent = `Offers will delete in ${h}h ${m}m ${s}s`;
-  }
-
-  // Post trade
-  function post(){
-    const user = document.getElementById("username").value.trim();
-    const game = document.getElementById("game").value.trim();
-    const give = document.getElementById("give").value.trim();
-    const want = document.getElementById("want").value.trim();
-    const lastPost = localStorage.getItem("lastPostTime");
+// Load posts
+function loadPosts(){
+  postsRef.once('value').then(snapshot=>{
+    let postsData = snapshot.val() || {};
     const now = Date.now();
 
-    if(!user||!game||!give||!want) return alert("All fields are required.");
-    if([user,game,give,want].some(containsBanned)) return alert("Message contains inappropriate language.");
-    if(lastPost && now - lastPost < COOLDOWN) return alert("You must wait 1 hour before posting again.");
+    // Remove expired posts
+    for(const key in postsData){
+      if(now - postsData[key].time > EXPIRY){
+        postsRef.child(key).remove();
+        delete postsData[key];
+      }
+    }
 
-    const newPostRef = postsRef.push();
-    newPostRef.set({user,game,give,want,time:now});
-    localStorage.setItem("lastPostTime", now);
+    const container = document.getElementById("posts");
+    container.innerHTML = "";
 
-    document.getElementById("give").value = "";
-    document.getElementById("want").value = "";
-  }
+    Object.values(postsData).sort((a,b)=>b.time-a.time).forEach(p=>{
+      const postDiv = document.createElement("div");
+      postDiv.className = "post";
 
-  // Live updates
-  postsRef.on('value', loadPosts);
+      const avatar = document.createElement("img");
+      avatar.className = "avatar";
+      avatar.src = getAvatarUrl(p.user);
+      avatar.onerror = ()=>avatar.src="https://www.roblox.com/favicon.ico";
 
+      const content = document.createElement("div");
+      content.className = "post-content";
+      content.innerHTML = `
+        <div class="username">${p.user}</div>
+        <div class="game">Game: ${p.game}</div>
+        <div class="trade-line"><b>Giving:</b> ${p.give}</div>
+        <div class="trade-line"><b>Want:</b> ${p.want}</div>
+        <div class="time">${new Date(p.time).toLocaleString()}</div>
+      `;
+
+      postDiv.appendChild(avatar);
+      postDiv.appendChild(content);
+      container.appendChild(postDiv);
+    });
+
+    updateTimer(postsData);
+  }).catch(err=>{
+    console.error("Error loading posts:", err);
+  });
+}
+
+// Update timer
+function updateTimer(postsData){
+  const timer = document.getElementById("timer");
+  const times = Object.values(postsData).map(p=>p.time);
+  if(times.length===0){ timer.textContent="Offers will delete in 3h 0m 0s"; return; }
+
+  const oldest = Math.min(...times);
+  const remaining = EXPIRY - (Date.now()-oldest);
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000)/60000);
+  const s = Math.floor((remaining % 60000)/1000);
+  timer.textContent = `Offers will delete in ${h}h ${m}m ${s}s`;
+}
+
+// Post trade
+function post(){
+  const user = document.getElementById("username").value.trim();
+  const game = document.getElementById("game").value.trim();
+  const give = document.getElementById("give").value.trim();
+  const want = document.getElementById("want").value.trim();
+  const lastPost = localStorage.getItem("lastPostTime");
+  const now = Date.now();
+
+  if(!user||!game||!give||!want){ return alert("All fields are required."); }
+  if([user,game,give,want].some(containsBanned)){ return alert("Message contains inappropriate language."); }
+  if(lastPost && now - lastPost < COOLDOWN){ return alert("You must wait 1 hour before posting again."); }
+
+  // Push to Firebase
+  postsRef.push({user, game, give, want, time: now})
+    .then(()=>{ console.log("Post saved"); })
+    .catch(err=>{ alert("Error saving post: "+err.message); });
+
+  localStorage.setItem("lastPostTime", now);
+  document.getElementById("give").value = "";
+  document.getElementById("want").value = "";
+}
+
+// Live updates
+postsRef.on('value', loadPosts);
 </script>
 
 </body>
