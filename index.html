@@ -5,7 +5,6 @@
 <title>Valueforged Trade Forum</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* --- GENERAL STYLES --- */
 body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
@@ -36,11 +35,10 @@ h2 {
   color: #9b7bff;
   margin-bottom: 18px;
 }
-/* --- INPUTS & BUTTONS --- */
-.card input, .card button {
+input, button {
   width: 100%;
-  max-width: 400px; /* limit width */
-  margin: 0 auto 14px auto; /* center */
+  max-width: 400px;
+  margin: 0 auto 14px auto;
   display: block;
   padding: 14px 18px;
   border-radius: 12px;
@@ -68,7 +66,6 @@ button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
-/* --- POSTS --- */
 .post {
   display: flex;
   gap: 16px;
@@ -80,9 +77,7 @@ button:hover {
   margin-bottom: 16px;
   transition: background 0.3s;
 }
-.post:hover {
-  background: rgba(255,255,255,0.08);
-}
+.post:hover { background: rgba(255,255,255,0.08); }
 .avatar {
   width: 64px;
   height: 64px;
@@ -90,9 +85,7 @@ button:hover {
   border: 2px solid #fff;
   flex-shrink: 0;
 }
-.post-content {
-  flex: 1;
-}
+.post-content { flex: 1; }
 .username { font-weight: 700; font-size: 16px; color: #c7b8ff; }
 .game { font-size: 13px; opacity: 0.85; margin-top: 2px; }
 .trade-line { font-size: 14px; margin-top: 4px; }
@@ -126,7 +119,6 @@ button:hover {
   </p>
 </div>
 
-<!-- Firebase 9 Modular SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
@@ -149,19 +141,15 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const postsRef = ref(db, "posts");
 
-// Roblox API helper to get user ID then avatar
+// Roblox avatar fetch
 async function getAvatarUrl(username){
   try {
     const res = await fetch(`https://api.roblox.com/users/get-by-username?username=${encodeURIComponent(username)}`);
     const data = await res.json();
     if(data.Id){
       return `https://www.roblox.com/headshot-thumbnail/image?userId=${data.Id}&width=150&height=150&format=png`;
-    } else {
-      return "https://www.roblox.com/favicon.ico";
-    }
-  } catch(err){
-    return "https://www.roblox.com/favicon.ico";
-  }
+    } else return "https://www.roblox.com/favicon.ico";
+  } catch(err){ return "https://www.roblox.com/favicon.ico"; }
 }
 
 function containsBanned(text){ return bannedWords.some(w=>text.toLowerCase().includes(w)); }
@@ -173,20 +161,18 @@ function loadPosts(){
     const container = document.getElementById("posts");
     container.innerHTML = "";
 
-    for(const [key,p] of Object.entries(data)){
-      if(now - p.time > EXPIRY){
-        remove(ref(db, "posts/"+key));
-        delete data[key];
-      }
+    // Remove expired posts
+    for(const [key, p] of Object.entries(data)){
+      if(now - p.time > EXPIRY){ remove(ref(db,"posts/"+key)); delete data[key]; }
     }
 
-    for(const p of Object.values(data).sort((a,b)=>b.time-a.time)){
+    for(const p of Object.values(data).sort((a,b)=>b.time-b.time)){
       const postDiv = document.createElement("div");
       postDiv.className="post";
 
       const avatar = document.createElement("img");
       avatar.className="avatar";
-      avatar.src = "https://www.roblox.com/favicon.ico";
+      avatar.src="https://www.roblox.com/favicon.ico"; // fallback
       getAvatarUrl(p.user).then(url => avatar.src = url);
 
       const content = document.createElement("div");
@@ -216,7 +202,7 @@ function updateTimer(postsData){
   const h = Math.floor(remaining/3600000);
   const m = Math.floor((remaining%3600000)/60000);
   const s = Math.floor((remaining%60000)/1000);
-  timer.textContent = `Offers will delete in ${h}h ${m}m ${s}s`;
+  timer.textContent=`Offers will delete in ${h}h ${m}m ${s}s`;
 }
 
 document.getElementById("postButton").addEventListener("click", ()=>{
@@ -242,6 +228,5 @@ document.getElementById("postButton").addEventListener("click", ()=>{
 
 loadPosts();
 </script>
-
 </body>
 </html>
