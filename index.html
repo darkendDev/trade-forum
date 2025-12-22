@@ -3,20 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <title>Roblox Trade Forum</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-body { margin:0; font-family:Arial,sans-serif; background:linear-gradient(135deg,#21006E 0%,#140044 51%,#070016 100%); color:white; }
-#forum { max-width:800px; margin:40px auto; padding:30px; }
-.card { background:rgba(255,255,255,0.06); backdrop-filter:blur(10px); padding:20px; border-radius:16px; margin-bottom:20px; }
-input, button { width:100%; padding:12px; border-radius:10px; border:none; margin-bottom:12px; }
-input { background:rgba(0,0,0,0.4); color:white; }
-button { background:linear-gradient(135deg,#6f4cff,#9b7bff); color:white; font-weight:600; cursor:pointer; }
-.post { background:rgba(255,255,255,0.05); padding:14px; border-radius:14px; margin-bottom:12px; }
-.username { color:#c7b8ff; font-weight:600; }
-.trade-line { font-size:14px; margin-top:4px; }
-.game { font-size:13px; opacity:0.85; margin-top:2px; }
-.time { font-size:12px; opacity:0.6; margin-top:4px; }
-.timer-text { font-size:13px; opacity:0.85; margin-top:10px; }
-.info-text { font-size:13px; opacity:0.75; margin-top:18px; line-height:1.4; }
+/* General Styles */
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #21006E 0%, #140044 51%, #070016 100%);
+  color: #fff;
+}
+#forum {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 30px;
+}
+.card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(10px);
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+input, button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+input {
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+}
+input::placeholder {
+  color: #ccc;
+}
+button {
+  background: linear-gradient(135deg, #6f4cff, #9b7bff);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.post {
+  background: rgba(255,255,255,0.05);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s;
+}
+.post:hover {
+  background: rgba(255,255,255,0.08);
+}
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  flex-shrink: 0;
+}
+.post-content {
+  flex: 1;
+}
+.username {
+  font-weight: 700;
+  color: #c7b8ff;
+  font-size: 16px;
+}
+.game {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+.trade-line {
+  font-size: 14px;
+  margin-top: 4px;
+}
+.time {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+.timer-text {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 10px;
+}
+.info-text {
+  font-size: 13px;
+  opacity: 0.75;
+  margin-top: 18px;
+  line-height: 1.4;
+}
 </style>
 </head>
 <body>
@@ -36,51 +123,79 @@ button { background:linear-gradient(135deg,#6f4cff,#9b7bff); color:white; font-w
 
   <p class="info-text">
     <b>How to complete a trade:</b><br>
-    Copy the trader’s Roblox username shown above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
+    Copy the trader’s Roblox username above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
   </p>
 </div>
 
 <script>
-const COOLDOWN = 60*60*1000; // 1 hour
-const EXPIRY = 3*60*60*1000;  // 3 hours
-const API = "https://api.npoint.io/82a12b64f0f0b6d585cf"; // pre-made global backend
+// ----- CONFIG -----
+const COOLDOWN = 60*60*1000; // 1 hour cooldown
+const EXPIRY = 3*60*60*1000; // 3 hour expiry
 const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
 
-function containsBanned(text){ return bannedWords.some(w=>text.toLowerCase().includes(w)); }
+// Roblox avatar URL helper
+function getAvatarUrl(username) {
+  return `https://www.roblox.com/headshot-thumbnail/image?userId=${username}&width=150&height=150&format=png`;
+}
 
-async function loadPosts(){
-  let posts = await (await fetch(API)).json();
+// Check for banned words
+function containsBanned(text){
+  return bannedWords.some(w => text.toLowerCase().includes(w));
+}
+
+// ----- MOCK POSTS STORAGE -----
+// Replace with Firebase or backend for global posts
+let posts = [];
+
+// Load posts in the forum
+function loadPosts(){
   const now = Date.now();
-  posts = posts.filter(p=>now - p.time < EXPIRY);
-  
+  posts = posts.filter(p => now - p.time < EXPIRY);
+
   const container = document.getElementById("posts");
   container.innerHTML = "";
-  posts.reverse().forEach(p=>{
-    container.innerHTML += `
-      <div class="post">
-        <div class="username">${p.user}</div>
-        <div class="game">Game: ${p.game}</div>
-        <div class="trade-line"><b>Giving:</b> ${p.give}</div>
-        <div class="trade-line"><b>Want:</b> ${p.want}</div>
-        <div class="time">${new Date(p.time).toLocaleString()}</div>
-      </div>`;
+
+  posts.slice().reverse().forEach(p => {
+    const postDiv = document.createElement("div");
+    postDiv.className = "post";
+
+    const avatar = document.createElement("img");
+    avatar.className = "avatar";
+    avatar.src = getAvatarUrl(p.user);
+    avatar.onerror = () => avatar.src = "https://www.roblox.com/favicon.ico";
+
+    const content = document.createElement("div");
+    content.className = "post-content";
+    content.innerHTML = `
+      <div class="username">${p.user}</div>
+      <div class="game">Game: ${p.game}</div>
+      <div class="trade-line"><b>Giving:</b> ${p.give}</div>
+      <div class="trade-line"><b>Want:</b> ${p.want}</div>
+      <div class="time">${new Date(p.time).toLocaleString()}</div>
+    `;
+
+    postDiv.appendChild(avatar);
+    postDiv.appendChild(content);
+    container.appendChild(postDiv);
   });
 
-  updateTimer(posts);
+  updateTimer();
 }
 
-function updateTimer(posts){
+// Update 3-hour timer
+function updateTimer(){
   const timer = document.getElementById("timer");
-  if(!posts.length){ timer.textContent="Offers will delete in 3h 0m 0s"; return; }
-  const oldest = Math.min(...posts.map(p=>p.time));
+  if(!posts.length){ timer.textContent = "Offers will delete in 3h 0m 0s"; return; }
+  const oldest = Math.min(...posts.map(p => p.time));
   const remaining = EXPIRY - (Date.now() - oldest);
-  const h = Math.floor(remaining/3600000);
-  const m = Math.floor((remaining%3600000)/60000);
-  const s = Math.floor((remaining%60000)/1000);
-  timer.textContent=`Offers will delete in ${h}h ${m}m ${s}s`;
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000)/60000);
+  const s = Math.floor((remaining % 60000)/1000);
+  timer.textContent = `Offers will delete in ${h}h ${m}m ${s}s`;
 }
 
-async function post(){
+// Post trade
+function post(){
   const user = document.getElementById("username").value.trim();
   const game = document.getElementById("game").value.trim();
   const give = document.getElementById("give").value.trim();
@@ -88,22 +203,20 @@ async function post(){
   const lastPost = localStorage.getItem("lastPostTime");
   const now = Date.now();
 
-  if(!user||!game||!give||!want){ return alert("All fields required"); }
-  if([user,game,give,want].some(containsBanned)){ return alert("Message contains inappropriate language"); }
+  if(!user||!game||!give||!want){ return alert("All fields are required."); }
+  if([user,game,give,want].some(containsBanned)){ return alert("Message contains inappropriate language."); }
   if(lastPost && now - lastPost < COOLDOWN){ return alert("You must wait 1 hour before posting again."); }
 
-  let posts = await (await fetch(API)).json();
   posts.push({user,game,give,want,time:now});
-
-  await fetch(API, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(posts)});
   localStorage.setItem("lastPostTime", now);
 
-  document.getElementById("give").value="";
-  document.getElementById("want").value="";
+  document.getElementById("give").value = "";
+  document.getElementById("want").value = "";
   loadPosts();
 }
 
-setInterval(loadPosts,5000);
+// Auto refresh every 5 seconds
+setInterval(loadPosts, 5000);
 loadPosts();
 </script>
 
