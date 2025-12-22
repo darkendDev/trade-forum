@@ -1,7 +1,135 @@
-<!-- Firebase 9 scripts -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Valueforged Trade Forum</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* --- GENERAL STYLES --- */
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
+  color: #fff;
+}
+#forum-container {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 20px;
+}
+.card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  margin-bottom: 25px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+h2 {
+  font-weight: 700;
+  font-size: 26px;
+  color: #9b7bff;
+  margin-bottom: 18px;
+}
+input, button {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: none;
+  margin-bottom: 14px;
+  font-size: 15px;
+  outline: none;
+}
+input {
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  transition: all 0.2s;
+}
+input:focus {
+  background: rgba(0,0,0,0.6);
+  box-shadow: 0 0 8px #9b7bff;
+}
+button {
+  background: linear-gradient(135deg, #6f4cff, #9b7bff);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+.post {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: rgba(255,255,255,0.05);
+  border-left: 4px solid #6f4cff;
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  transition: background 0.3s;
+}
+.post:hover {
+  background: rgba(255,255,255,0.08);
+}
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  flex-shrink: 0;
+}
+.post-content {
+  flex: 1;
+}
+.username { font-weight: 700; font-size: 16px; color: #c7b8ff; }
+.game { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+.trade-line { font-size: 14px; margin-top: 4px; }
+.time { font-size: 12px; opacity: 0.6; margin-top: 4px; }
+#timer { font-size: 13px; opacity: 0.85; margin-top: 12px; }
+.info-text { font-size: 13px; opacity: 0.75; margin-top: 22px; line-height: 1.5; }
+@media (max-width: 600px) {
+  .post { flex-direction: column; align-items: center; text-align: center; }
+  .post-content { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div id="forum-container">
+  <div class="card">
+    <h2>Trade Requests</h2>
+    <input id="username" placeholder="Roblox Username">
+    <input id="game" placeholder="Roblox Game">
+    <input id="give" placeholder="Item You Are Giving">
+    <input id="want" placeholder="Item You Want">
+    <button id="postButton">Post Trade</button>
+    <p id="timer"></p>
+  </div>
+
+  <div id="posts"></div>
+
+  <p class="info-text">
+    <b>How to complete a trade:</b><br>
+    Copy the trader’s Roblox username above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
+  </p>
+</div>
+
+<!-- Firebase 9 Modular SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+const COOLDOWN = 60*60*1000; // 1 hour
+const EXPIRY = 3*60*60*1000; // 3 hours
+const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
 
 const firebaseConfig = {
   apiKey: "AIzaSyDs_5zv6fgFe5P02TEIW2sJFgbczBPVe3A",
@@ -14,50 +142,40 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-const postsRef = ref(database, "posts");
+const db = getDatabase(app);
+const postsRef = ref(db, "posts");
 
-// ----- Config -----
-const COOLDOWN = 60*60*1000; // 1 hour
-const EXPIRY = 3*60*60*1000; // 3 hours
-const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
-
-// Roblox avatar helper
 function getAvatarUrl(username){
   return `https://www.roblox.com/headshot-thumbnail/image?userId=${username}&width=150&height=150&format=png`;
 }
 function containsBanned(text){
-  return bannedWords.some(w => text.toLowerCase().includes(w));
+  return bannedWords.some(w=>text.toLowerCase().includes(w));
 }
 
-// Load posts
 function loadPosts(){
-  onValue(postsRef, (snapshot) => {
-    let postsData = snapshot.val() || {};
+  onValue(postsRef, (snapshot)=>{
+    const data = snapshot.val() || {};
     const now = Date.now();
-
-    // Remove expired posts
-    for (const key in postsData){
-      if(now - postsData[key].time > EXPIRY){
-        remove(ref(database, "posts/" + key));
-        delete postsData[key];
-      }
-    }
-
     const container = document.getElementById("posts");
     container.innerHTML = "";
 
-    Object.values(postsData).sort((a,b)=>b.time - a.time).forEach(p=>{
+    // Remove expired posts
+    Object.entries(data).forEach(([key, p])=>{
+      if(now - p.time > EXPIRY){
+        remove(ref(db, "posts/"+key));
+        delete data[key];
+      }
+    });
+
+    Object.values(data).sort((a,b)=>b.time - a.time).forEach(p=>{
       const postDiv = document.createElement("div");
       postDiv.className = "post";
-
       const avatar = document.createElement("img");
-      avatar.className = "avatar";
+      avatar.className="avatar";
       avatar.src = getAvatarUrl(p.user);
-      avatar.onerror = ()=>avatar.src="https://www.roblox.com/favicon.ico";
-
+      avatar.onerror=()=>avatar.src="https://www.roblox.com/favicon.ico";
       const content = document.createElement("div");
-      content.className = "post-content";
+      content.className="post-content";
       content.innerHTML = `
         <div class="username">${p.user}</div>
         <div class="game">Game: ${p.game}</div>
@@ -65,31 +183,28 @@ function loadPosts(){
         <div class="trade-line"><b>Want:</b> ${p.want}</div>
         <div class="time">${new Date(p.time).toLocaleString()}</div>
       `;
-
       postDiv.appendChild(avatar);
       postDiv.appendChild(content);
       container.appendChild(postDiv);
     });
 
-    updateTimer(postsData);
+    updateTimer(data);
   });
 }
 
-// Update timer
 function updateTimer(postsData){
   const timer = document.getElementById("timer");
   const times = Object.values(postsData).map(p=>p.time);
   if(times.length===0){ timer.textContent="Offers will delete in 3h 0m 0s"; return; }
   const oldest = Math.min(...times);
-  const remaining = EXPIRY - (Date.now() - oldest);
-  const h = Math.floor(remaining / 3600000);
-  const m = Math.floor((remaining % 3600000)/60000);
-  const s = Math.floor((remaining % 60000)/1000);
+  const remaining = EXPIRY - (Date.now()-oldest);
+  const h = Math.floor(remaining/3600000);
+  const m = Math.floor((remaining%3600000)/60000);
+  const s = Math.floor((remaining%60000)/1000);
   timer.textContent = `Offers will delete in ${h}h ${m}m ${s}s`;
 }
 
-// Post trade
-function post(){
+document.getElementById("postButton").addEventListener("click", ()=>{
   const user = document.getElementById("username").value.trim();
   const game = document.getElementById("game").value.trim();
   const give = document.getElementById("give").value.trim();
@@ -108,8 +223,11 @@ function post(){
   localStorage.setItem("lastPostTime", now);
   document.getElementById("give").value="";
   document.getElementById("want").value="";
-}
+});
 
-// Load posts initially
+// Initial load
 loadPosts();
 </script>
+
+</body>
+</html>
