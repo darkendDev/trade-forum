@@ -11,6 +11,34 @@ body {
   background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
   color: #fff;
 }
+
+/* TOP BAR */
+.top-bar {
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+}
+.top-bar a {
+  text-decoration: none;
+}
+.top-bar button {
+  padding: 12px 32px;
+  border-radius: 14px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6f4cff, #9b7bff);
+  color: #fff;
+  transition: all 0.25s;
+}
+.top-bar button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+
 #forum-container {
   max-width: 1000px;
   margin: 40px auto;
@@ -23,11 +51,6 @@ body {
   padding: 30px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   margin-bottom: 25px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
 }
 h2 {
   font-weight: 700;
@@ -35,6 +58,7 @@ h2 {
   color: #9b7bff;
   margin-bottom: 18px;
 }
+
 input, button {
   width: 100%;
   max-width: 400px;
@@ -44,16 +68,10 @@ input, button {
   border-radius: 12px;
   border: none;
   font-size: 15px;
-  outline: none;
 }
 input {
   background: rgba(0,0,0,0.45);
   color: #fff;
-  transition: all 0.2s;
-}
-input:focus {
-  background: rgba(0,0,0,0.6);
-  box-shadow: 0 0 8px #9b7bff;
 }
 button {
   background: linear-gradient(135deg, #6f4cff, #9b7bff);
@@ -66,39 +84,53 @@ button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
+
 .post {
   display: flex;
   gap: 16px;
-  align-items: flex-start;
   background: rgba(255,255,255,0.05);
   border-left: 4px solid #6f4cff;
   padding: 18px;
   border-radius: 14px;
   margin-bottom: 16px;
-  transition: background 0.3s;
 }
-.post:hover { background: rgba(255,255,255,0.08); }
 .avatar {
   width: 64px;
   height: 64px;
   border-radius: 50%;
   border: 2px solid #fff;
-  flex-shrink: 0;
 }
-.post-content { flex: 1; }
-.username { font-weight: 700; font-size: 16px; color: #c7b8ff; }
-.game { font-size: 13px; opacity: 0.85; margin-top: 2px; }
-.trade-line { font-size: 14px; margin-top: 4px; }
-.time { font-size: 12px; opacity: 0.6; margin-top: 4px; }
-#timer { font-size: 13px; opacity: 0.85; margin-top: 12px; }
-.info-text { font-size: 13px; opacity: 0.75; margin-top: 22px; line-height: 1.5; }
-@media (max-width: 600px) {
-  .post { flex-direction: column; align-items: center; text-align: center; }
-  .post-content { width: 100%; }
+.username { font-weight: 700; color: #c7b8ff; }
+.game { font-size: 13px; opacity: 0.85; }
+.trade-line { font-size: 14px; }
+.time { font-size: 12px; opacity: 0.6; }
+
+/* FOOTER */
+footer {
+  margin-top: 60px;
+  padding: 30px 20px;
+  background: rgba(0,0,0,0.4);
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.85;
+}
+footer a {
+  color: #9b7bff;
+  text-decoration: none;
+  margin: 0 8px;
+}
+footer a:hover {
+  text-decoration: underline;
 }
 </style>
 </head>
 <body>
+
+<div class="top-bar">
+  <a href="https://valueforged.xyz/">
+    <button>Return to Valuelist</button>
+  </a>
+</div>
 
 <div id="forum-container">
   <div class="card">
@@ -112,12 +144,19 @@ button:hover {
   </div>
 
   <div id="posts"></div>
-
-  <p class="info-text">
-    <b>How to complete a trade:</b><br>
-    Copy the trader’s Roblox username above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
-  </p>
 </div>
+
+<footer>
+  Copyright © 2025 Valueforged.xyz All rights reserved.<br>
+  Website not yet compatible with mobile devices. Please use landscape mode for a better experience.<br>
+  Valueforged does not associate with the Roblox corporation in any way.<br><br>
+
+  <a href="https://www.valueforged.xyz/terms/privacy-policy">Privacy Policy</a> |
+  <a href="https://www.valueforged.xyz/terms/cookie-policy">Cookie Policy</a> |
+  <a href="https://www.valueforged.xyz/terms/terms-of-use">Terms of Use</a> |
+  <a href="https://www.valueforged.xyz/pages/usage-guide">Usage Guide</a> |
+  <a href="https://www.valueforged.xyz/pages/contact">Contact</a>
+</footer>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
@@ -125,7 +164,7 @@ import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com
 
 const COOLDOWN = 60*60*1000;
 const EXPIRY = 3*60*60*1000;
-const bannedWords = ["fuck","shit","bitch","asshole","nigger","faggot","retard","cunt","slut","whore"];
+const AVATAR_URL = "https://cdn.discordapp.com/attachments/1450022422416982157/1452691205467934740/Untitled524_20251222105606.png";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDs_5zv6fgFe5P02TEIW2sJFgbczBPVe3A",
@@ -141,92 +180,39 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const postsRef = ref(db, "posts");
 
-// Roblox avatar fetch
-async function getAvatarUrl(username){
-  try {
-    const res = await fetch(`https://api.roblox.com/users/get-by-username?username=${encodeURIComponent(username)}`);
-    const data = await res.json();
-    if(data.Id){
-      return `https://www.roblox.com/headshot-thumbnail/image?userId=${data.Id}&width=150&height=150&format=png`;
-    } else return "https://www.roblox.com/favicon.ico";
-  } catch(err){ return "https://www.roblox.com/favicon.ico"; }
-}
+onValue(postsRef, (snapshot)=>{
+  const data = snapshot.val() || {};
+  const container = document.getElementById("posts");
+  container.innerHTML = "";
 
-function containsBanned(text){ return bannedWords.some(w=>text.toLowerCase().includes(w)); }
-
-function loadPosts(){
-  onValue(postsRef, async (snapshot)=>{
-    const data = snapshot.val() || {};
-    const now = Date.now();
-    const container = document.getElementById("posts");
-    container.innerHTML = "";
-
-    // Remove expired posts
-    for(const [key, p] of Object.entries(data)){
-      if(now - p.time > EXPIRY){ remove(ref(db,"posts/"+key)); delete data[key]; }
+  Object.entries(data).forEach(([key,p])=>{
+    if(Date.now() - p.time > EXPIRY){
+      remove(ref(db,"posts/"+key));
+      return;
     }
-
-    for(const p of Object.values(data).sort((a,b)=>b.time-b.time)){
-      const postDiv = document.createElement("div");
-      postDiv.className="post";
-
-      const avatar = document.createElement("img");
-      avatar.className="avatar";
-      avatar.src="https://www.roblox.com/favicon.ico"; // fallback
-      getAvatarUrl(p.user).then(url => avatar.src = url);
-
-      const content = document.createElement("div");
-      content.className="post-content";
-      content.innerHTML=`
+    const post = document.createElement("div");
+    post.className="post";
+    post.innerHTML=`
+      <img class="avatar" src="${AVATAR_URL}">
+      <div>
         <div class="username">${p.user}</div>
         <div class="game">Game: ${p.game}</div>
         <div class="trade-line"><b>Giving:</b> ${p.give}</div>
         <div class="trade-line"><b>Want:</b> ${p.want}</div>
         <div class="time">${new Date(p.time).toLocaleString()}</div>
-      `;
-      postDiv.appendChild(avatar);
-      postDiv.appendChild(content);
-      container.appendChild(postDiv);
-    }
-
-    updateTimer(data);
+      </div>
+    `;
+    container.appendChild(post);
   });
-}
-
-function updateTimer(postsData){
-  const timer = document.getElementById("timer");
-  const times = Object.values(postsData).map(p=>p.time);
-  if(times.length===0){ timer.textContent="Offers will delete in 3h 0m 0s"; return; }
-  const oldest = Math.min(...times);
-  const remaining = EXPIRY - (Date.now()-oldest);
-  const h = Math.floor(remaining/3600000);
-  const m = Math.floor((remaining%3600000)/60000);
-  const s = Math.floor((remaining%60000)/1000);
-  timer.textContent=`Offers will delete in ${h}h ${m}m ${s}s`;
-}
-
-document.getElementById("postButton").addEventListener("click", ()=>{
-  const user = document.getElementById("username").value.trim();
-  const game = document.getElementById("game").value.trim();
-  const give = document.getElementById("give").value.trim();
-  const want = document.getElementById("want").value.trim();
-  const lastPost = localStorage.getItem("lastPostTime");
-  const now = Date.now();
-
-  if(!user||!game||!give||!want){ return alert("All fields are required."); }
-  if([user,game,give,want].some(containsBanned)){ return alert("Message contains inappropriate language."); }
-  if(lastPost && now - lastPost < COOLDOWN){ return alert("You must wait 1 hour before posting again."); }
-
-  push(postsRef, {user, game, give, want, time: now})
-    .then(()=>console.log("Post saved"))
-    .catch(err=>alert("Error saving post: "+err.message));
-
-  localStorage.setItem("lastPostTime", now);
-  document.getElementById("give").value="";
-  document.getElementById("want").value="";
 });
 
-loadPosts();
+document.getElementById("postButton").onclick = ()=>{
+  const user=username.value.trim(), game=game.value.trim(),
+        give=give.value.trim(), want=want.value.trim();
+  if(!user||!game||!give||!want) return alert("All fields required.");
+  push(postsRef,{user,game,give,want,time:Date.now()});
+};
 </script>
 </body>
 </html>
+
