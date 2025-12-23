@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Valueforged Trade Forum</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
 <style>
 body {
   margin: 0;
@@ -15,10 +16,10 @@ body {
 /* TOP BAR */
 .top-bar {
   padding: 16px;
-  display: flex;
-  justify-content: center;
   background: rgba(0,0,0,0.35);
   backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: center;
 }
 .top-bar a {
   text-decoration: none;
@@ -45,7 +46,7 @@ body {
   padding: 20px;
 }
 .card {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255,255,255,0.03);
   backdrop-filter: blur(12px);
   border-radius: 18px;
   padding: 30px;
@@ -56,7 +57,6 @@ h2 {
   font-weight: 700;
   font-size: 26px;
   color: #9b7bff;
-  margin-bottom: 18px;
 }
 
 input, button {
@@ -78,7 +78,6 @@ button {
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
 }
 button:hover {
   transform: translateY(-2px);
@@ -119,11 +118,10 @@ footer a {
   text-decoration: none;
   margin: 0 8px;
 }
-footer a:hover {
-  text-decoration: underline;
-}
+footer a:hover { text-decoration: underline; }
 </style>
 </head>
+
 <body>
 
 <div class="top-bar">
@@ -144,6 +142,11 @@ footer a:hover {
   </div>
 
   <div id="posts"></div>
+
+  <p class="info-text">
+    <b>How to complete a trade:</b><br>
+    Copy the trader’s Roblox username above, then add them as a friend on Roblox to negotiate and complete the deal in-game.
+  </p>
 </div>
 
 <footer>
@@ -164,7 +167,9 @@ import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com
 
 const COOLDOWN = 60*60*1000;
 const EXPIRY = 3*60*60*1000;
-const AVATAR_URL = "https://cdn.discordapp.com/attachments/1450022422416982157/1452691205467934740/Untitled524_20251222105606.png";
+
+const AVATAR_URL =
+"https://cdn.discordapp.com/attachments/1450022422416982157/1452691205467934740/Untitled524_20251222105606.png";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDs_5zv6fgFe5P02TEIW2sJFgbczBPVe3A",
@@ -213,6 +218,6 @@ document.getElementById("postButton").onclick = ()=>{
   push(postsRef,{user,game,give,want,time:Date.now()});
 };
 </script>
+
 </body>
 </html>
-
