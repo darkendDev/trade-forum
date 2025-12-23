@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Valueforged Trade Forum</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
 <style>
 body {
   margin: 0;
@@ -12,9 +11,31 @@ body {
   background: linear-gradient(145deg, #0f0c29, #302b63, #24243e);
   color: #fff;
 }
+.top-bar {
+  background: rgba(0,0,0,0.4);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.top-bar button {
+  background: linear-gradient(135deg, #6f4cff, #9b7bff);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.top-bar button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
 #forum-container {
   max-width: 1000px;
-  margin: 40px auto;
+  margin: 20px auto 40px auto;
   padding: 20px;
 }
 .card {
@@ -45,11 +66,19 @@ input {
   background: rgba(0,0,0,0.45);
   color: #fff;
 }
+input:focus {
+  background: rgba(0,0,0,0.6);
+  box-shadow: 0 0 8px #9b7bff;
+}
 button {
   background: linear-gradient(135deg, #6f4cff, #9b7bff);
   color: #fff;
   font-weight: 600;
   cursor: pointer;
+}
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
 .post {
   display: flex;
@@ -59,21 +88,41 @@ button {
   padding: 18px;
   border-radius: 14px;
   margin-bottom: 16px;
+  align-items: flex-start;
 }
 .avatar {
   width: 64px;
   height: 64px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
-.username { font-weight: 700; color: #c7b8ff; }
-.game { font-size: 13px; opacity: 0.85; }
-.trade-line { font-size: 14px; }
-.time { font-size: 12px; opacity: 0.6; }
+.post-content { flex: 1; }
+.username { font-weight: 700; font-size: 16px; color: #c7b8ff; }
+.game { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+.trade-line { font-size: 14px; margin-top: 4px; }
+.time { font-size: 12px; opacity: 0.6; margin-top: 4px; }
 #timer { font-size: 13px; opacity: 0.85; margin-top: 12px; }
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  background: rgba(0,0,0,0.3);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+}
+footer a { color: #9b7bff; text-decoration: none; margin: 0 6px; }
+footer a:hover { text-decoration: underline; }
+@media (max-width: 600px) {
+  .post { flex-direction: column; align-items: center; text-align: center; }
+  .post-content { width: 100%; }
+}
 </style>
 </head>
-
 <body>
+
+<div class="top-bar">
+  <button onclick="window.location.href='https://valueforged.xyz/'">Return to Valuelist</button>
+</div>
 
 <div id="forum-container">
   <div class="card">
@@ -89,15 +138,24 @@ button {
   <div id="posts"></div>
 </div>
 
+<footer>
+  Copyright © 2025 Valueforged.xyz All rights reserved.<br>
+  Website not yet compatible with mobile devices. Please use landscape mode for a better experience.<br>
+  Valueforged does not associate with the Roblox corporation in any way.<br>
+  <a href="https://www.valueforged.xyz/terms/privacy-policy" target="_blank">Privacy Policy</a> |
+  <a href="https://www.valueforged.xyz/terms/cookie-policy" target="_blank">Cookie Policy</a> |
+  <a href="https://www.valueforged.xyz/terms/terms-of-use" target="_blank">Terms of Use</a> |
+  <a href="https://www.valueforged.xyz/pages/usage-guide" target="_blank">Usage Guide</a> |
+  <a href="https://www.valueforged.xyz/pages/contact" target="_blank">Contact</a>
+</footer>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-const COOLDOWN = 60 * 60 * 1000;
-const EXPIRY = 3 * 60 * 60 * 1000;
-
-const AVATAR =
-"https://www.roblox.com/favicon.ico";
+const COOLDOWN = 60*60*1000;
+const EXPIRY = 3*60*60*1000;
+const AVATAR = "https://cdn.discordapp.com/attachments/1450022422416982157/1452691205467934740/Untitled524_20251222105606.png";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDs_5zv6fgFe5P02TEIW2sJFgbczBPVe3A",
@@ -113,21 +171,21 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const postsRef = ref(db, "posts");
 
-const username = document.getElementById("username");
-const game = document.getElementById("game");
-const give = document.getElementById("give");
-const want = document.getElementById("want");
+const usernameInput = document.getElementById("username");
+const gameInput = document.getElementById("game");
+const giveInput = document.getElementById("give");
+const wantInput = document.getElementById("want");
 const postButton = document.getElementById("postButton");
-const posts = document.getElementById("posts");
-const timer = document.getElementById("timer");
+const postsContainer = document.getElementById("posts");
+const timerEl = document.getElementById("timer");
 
 onValue(postsRef, (snapshot) => {
   const data = snapshot.val() || {};
-  posts.innerHTML = "";
+  postsContainer.innerHTML = "";
 
   Object.entries(data).forEach(([key, p]) => {
-    if (Date.now() - p.time > EXPIRY) {
-      remove(ref(db, "posts/" + key));
+    if(Date.now() - p.time > EXPIRY){
+      remove(ref(db, "posts/"+key));
       return;
     }
 
@@ -135,7 +193,7 @@ onValue(postsRef, (snapshot) => {
     div.className = "post";
     div.innerHTML = `
       <img class="avatar" src="${AVATAR}">
-      <div>
+      <div class="post-content">
         <div class="username">${p.user}</div>
         <div class="game">Game: ${p.game}</div>
         <div class="trade-line"><b>Giving:</b> ${p.give}</div>
@@ -143,43 +201,36 @@ onValue(postsRef, (snapshot) => {
         <div class="time">${new Date(p.time).toLocaleString()}</div>
       </div>
     `;
-    posts.appendChild(div);
+    postsContainer.appendChild(div);
   });
 
   updateTimer(data);
 });
 
-function updateTimer(data) {
+function updateTimer(data){
   const times = Object.values(data).map(p => p.time);
-  if (!times.length) {
-    timer.textContent = "Offers will delete in 3h 0m 0s";
-    return;
-  }
+  if(!times.length){ timerEl.textContent = "Offers will delete in 3h 0m 0s"; return; }
   const oldest = Math.min(...times);
-  const remaining = EXPIRY - (Date.now() - oldest);
-  timer.textContent =
-    "Offers will delete in " +
-    Math.floor(remaining / 3600000) + "h " +
-    Math.floor((remaining % 3600000) / 60000) + "m " +
-    Math.floor((remaining % 60000) / 1000) + "s";
+  const remaining = EXPIRY - (Date.now()-oldest);
+  timerEl.textContent = `Offers will delete in ${Math.floor(remaining/3600000)}h ${Math.floor((remaining%3600000)/60000)}m ${Math.floor((remaining%60000)/1000)}s`;
 }
 
-postButton.addEventListener("click", () => {
-  if (!username.value || !game.value || !give.value || !want.value) {
-    alert("All fields required");
+postButton.addEventListener("click", ()=>{
+  if(!usernameInput.value || !gameInput.value || !giveInput.value || !wantInput.value){
+    alert("All fields are required.");
     return;
   }
 
   push(postsRef, {
-    user: username.value.trim(),
-    game: game.value.trim(),
-    give: give.value.trim(),
-    want: want.value.trim(),
+    user: usernameInput.value.trim(),
+    game: gameInput.value.trim(),
+    give: giveInput.value.trim(),
+    want: wantInput.value.trim(),
     time: Date.now()
   });
 
-  give.value = "";
-  want.value = "";
+  giveInput.value="";
+  wantInput.value="";
 });
 </script>
 
